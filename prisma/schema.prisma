@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+enum ProviderCategory {
+  CLEANING
+  AIRCON
+  LAUNDRY
+  CAR_SERVICE
+}
+
+enum BookingStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_PROVIDERS_AVAILABLE
+}
+
+enum VerificationStatus {
+  UNSUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PayoutStatus {
+  NOT_STARTED
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PayoutDestinationType {
+  BANK
+  GCASH
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  phone        String?
+  createdAt    DateTime @default(now())
+
+  // Provider-specific fields
+  providerCategory ProviderCategory?
+  isOnline         Boolean           @default(false)
+  bio              String?
+  ratingSum        Int               @default(0)
+  ratingCount      Int               @default(0)
+
+  // Provider ID verification
+  verificationStatus VerificationStatus @default(UNSUBMITTED)
+  idPhotoPath         String?
+  idPhotoSubmittedAt  DateTime?
+  verifiedAt          DateTime?
+  verifiedById        String?
+  rejectionReason     String?
+
+  // Provider live location (updated while on an active job)
+  lastLat          Float?
+  lastLng          Float?
+  lastLocationAt   DateTime?
+
+  bookingsAsCustomer Booking[] @relation("CustomerBookings")
+  bookingsAsProvider Booking[] @relation("ProviderBookings")
+  ratingsGiven       Rating[]  @relation("RatingsGiven")
+  ratingsReceived    Rating[]  @relation("RatingsReceived")
+}
+
+model Booking {
+  id             String           @id @default(cuid())
+  customerId     String
+  providerId     String?
+  status         BookingStatus    @default(PENDING)
+  category       ProviderCategory
+  serviceType    String
+  address        String
+  customerLat    Float
+  customerLng    Float
+  propertyType   String?
+  hours          Float?
+  quantity       Float?
+  estimatedHours Float            @default(2)
+  price          Float
+  notes          String?
+
+  // Real payment collection (PayMongo)
+  paymentStatus            PaymentStatus @default(UNPAID)
+  paymongoCheckoutSessionId String?
+  paymongoCheckoutUrl       String?
+  paidAt                    DateTime?
+
+  createdAt   DateTime  @default(now())
+  assignedAt  DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  customer User  @relation("CustomerBookings", fields: [customerId], references: [id])
+  provider User? @relation("ProviderBookings", fields: [providerId], references: [id])
+
+  transaction Transaction?
+  rating      Rating?
+}
+
+model Transaction {
+  id               String   @id @default(cuid())
+  bookingId        String   @unique
+  amount           Float
+  commissionRate   Float
+  commissionAmount Float
+  providerPayout   Float
+  createdAt        DateTime @default(now())
+
+  // Automatic commission payout to the platform owner (PayMongo Transfer)
+  payoutStatus      PayoutStatus @default(NOT_STARTED)
+  paymongoTransferId String?
+  payoutAt           DateTime?
+  payoutError        String?
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+// Singleton row holding where the platform's commission is paid out to.
+model PlatformSettings {
+  id                    String                 @id @default("default")
+  payoutDestinationType PayoutDestinationType?
+  accountNumber         String?
+  accountName           String?
+  bankCode              String?
+  bankLabel             String?
+  updatedAt             DateTime               @updatedAt
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  customerId String
+  providerId String
+  stars      Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  booking  Booking @relation(fields: [bookingId], references: [id])
+  customer User    @relation("RatingsGiven", fields: [customerId], references: [id])
+  provider User    @relation("RatingsReceived", fields: [providerId], references: [id])
+}

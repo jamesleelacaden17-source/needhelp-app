@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# uploaded ID photos (sensitive, never commit)
+/storage/
+
+# local sqlite db
+/prisma/dev.db
+/prisma/dev.db-journal
+
+# local-machine-only dev tooling (not portable across machines)
+/.claude/
+/scripts/
