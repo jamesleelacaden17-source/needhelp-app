@@ -64,7 +64,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 rounded-full bg-teal-600 py-2.5 font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+          className="mt-2 rounded-full bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
           {loading ? "Logging in…" : "Log in"}
         </button>
@@ -72,7 +72,7 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-zinc-500">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-teal-700">
+        <Link href="/signup" className="font-medium text-brand-700">
           Sign up
         </Link>
       </p>

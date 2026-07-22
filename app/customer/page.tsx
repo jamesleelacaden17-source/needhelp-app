@@ -17,6 +17,7 @@ import {
   type ProviderCategoryId,
 } from "@/lib/config";
 import LocationMap from "@/app/components/LocationMap";
+import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending",
@@ -178,7 +179,7 @@ export default function CustomerDashboard() {
                 onClick={() => handleCategoryChange(c.id)}
                 className={`rounded-full px-4 py-2 text-sm font-medium ${
                   category === c.id
-                    ? "bg-teal-600 text-white"
+                    ? "bg-brand-600 text-white"
                     : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                 }`}
               >
@@ -273,7 +274,7 @@ export default function CustomerDashboard() {
             </span>
             <LocationMap
               center={pin}
-              markers={[{ id: "pin", lat: pin[0], lng: pin[1], color: "teal" }]}
+              markers={[{ id: "pin", lat: pin[0], lng: pin[1], color: "brand" }]}
               onPick={(lat, lng) => setPin([lat, lng])}
             />
             <span className="text-xs text-zinc-400">
@@ -307,7 +308,7 @@ export default function CustomerDashboard() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-full bg-teal-600 py-2.5 font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+            className="rounded-full bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
             {submitting ? "Finding a provider…" : "Book instantly"}
           </button>
@@ -359,16 +360,33 @@ function ActiveBookingCard({
       </div>
       <p className="mt-1 text-sm text-zinc-500">{b.address}</p>
       <p className="mt-1 text-sm text-zinc-500">{bookingSubtitle(b)}</p>
-      <p className="mt-1 text-sm text-zinc-500">
-        {b.provider ? `Provider: ${b.provider.name}` : "Searching for a provider…"}
-      </p>
+
+      {b.provider ? (
+        <div className="mt-2 flex items-center gap-2">
+          <ProviderAvatar
+            providerId={b.provider.id}
+            name={b.provider.name}
+            hasPhoto={!!b.provider.profilePhotoPath}
+            size={36}
+          />
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-zinc-900">{b.provider.name}</span>
+            <div className="flex flex-wrap items-center gap-1">
+              {b.provider.verificationStatus === "APPROVED" && <VerifiedBadge />}
+              {b.provider.superBadge && <SuperBadge label={b.provider.superBadge} />}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-1 text-sm text-zinc-500">Searching for a provider…</p>
+      )}
 
       {showMap && (
         <div className="mt-3">
           <LocationMap
             center={[b.customerLat, b.customerLng]}
             markers={[
-              { id: "house", lat: b.customerLat, lng: b.customerLng, color: "teal", label: "Your address" },
+              { id: "house", lat: b.customerLat, lng: b.customerLng, color: "brand", label: "Your address" },
               ...(hasProviderLocation
                 ? [
                     {
@@ -432,7 +450,17 @@ function PastBookingCard({ booking, onRated }: { booking: Booking; onRated: () =
       <p className="mt-1 text-sm text-zinc-500">{booking.address}</p>
       <p className="mt-1 text-sm text-zinc-500">{bookingSubtitle(booking)}</p>
       {booking.provider && (
-        <p className="mt-1 text-sm text-zinc-500">Provider: {booking.provider.name}</p>
+        <div className="mt-2 flex items-center gap-2">
+          <ProviderAvatar
+            providerId={booking.provider.id}
+            name={booking.provider.name}
+            hasPhoto={!!booking.provider.profilePhotoPath}
+            size={28}
+          />
+          <span className="text-sm text-zinc-700">{booking.provider.name}</span>
+          {booking.provider.verificationStatus === "APPROVED" && <VerifiedBadge />}
+          {booking.provider.superBadge && <SuperBadge label={booking.provider.superBadge} />}
+        </div>
       )}
       <p className="mt-1 text-sm font-semibold text-zinc-900">{CURRENCY_SYMBOL}{booking.price.toFixed(2)}</p>
 
@@ -471,7 +499,7 @@ function PastBookingCard({ booking, onRated }: { booking: Booking; onRated: () =
             <button
               onClick={submitRating}
               disabled={submitting}
-              className="self-start rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+              className="self-start rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
             >
               {submitting ? "Submitting…" : "Submit rating"}
             </button>
@@ -512,7 +540,7 @@ function PaymentSection({ booking }: { booking: Booking }) {
       {booking.paymentStatus === "PENDING" && booking.paymongoCheckoutUrl ? (
         <a
           href={booking.paymongoCheckoutUrl}
-          className="rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700"
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
           Continue payment
         </a>
@@ -520,7 +548,7 @@ function PaymentSection({ booking }: { booking: Booking }) {
         <button
           onClick={payNow}
           disabled={loading}
-          className="rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
           {loading ? "Starting payment…" : booking.paymentStatus === "FAILED" ? "Retry payment" : "Pay now"}
         </button>

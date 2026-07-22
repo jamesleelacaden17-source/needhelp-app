@@ -11,6 +11,7 @@ const signupSchema = z
     password: z.string().min(6),
     role: z.enum(["CUSTOMER", "PROVIDER"]),
     providerCategory: z.enum(["CLEANING", "AIRCON", "LAUNDRY"]).optional(),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
     phone: z.string().optional(),
   })
   .refine((data) => data.role !== "PROVIDER" || !!data.providerCategory, {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  const { name, email, password, role, providerCategory, phone } = parsed.data;
+  const { name, email, password, role, providerCategory, gender, phone } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
       role,
       phone,
       providerCategory: role === "PROVIDER" ? providerCategory : null,
+      gender: role === "PROVIDER" ? gender : null,
     },
   });
 

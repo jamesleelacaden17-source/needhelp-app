@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getSuperBadge, type Gender } from "@/lib/config";
 
 export async function GET() {
   const session = await getSession();
@@ -34,6 +35,8 @@ export async function GET() {
         ratingCount: true,
         verificationStatus: true,
         providerCategory: true,
+        gender: true,
+        profilePhotoPath: true,
       },
     }),
   ]);
@@ -53,9 +56,13 @@ export async function GET() {
     transactionCount: transactions.length,
     bookingCounts,
     transactions,
-    providers: providers.map((p) => ({
-      ...p,
-      avgRating: p.ratingCount > 0 ? p.ratingSum / p.ratingCount : null,
-    })),
+    providers: providers.map((p) => {
+      const avgRating = p.ratingCount > 0 ? p.ratingSum / p.ratingCount : null;
+      return {
+        ...p,
+        avgRating,
+        superBadge: getSuperBadge(p.gender as Gender | null, avgRating, p.ratingCount),
+      };
+    }),
   });
 }

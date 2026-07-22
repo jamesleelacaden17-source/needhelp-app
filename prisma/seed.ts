@@ -15,8 +15,8 @@ const PLACEHOLDER_ID_PHOTO = Buffer.from(
   "base64"
 );
 
-async function writePlaceholderIdPhoto(userId: string): Promise<string> {
-  const storageDir = path.join(process.cwd(), "storage", "id-photos");
+async function writePlaceholderPhoto(userId: string, dirName: string): Promise<string> {
+  const storageDir = path.join(process.cwd(), "storage", dirName);
   await mkdir(storageDir, { recursive: true });
   const filename = `${userId}-seed.png`;
   await writeFile(path.join(storageDir, filename), PLACEHOLDER_ID_PHOTO);
@@ -24,6 +24,7 @@ async function writePlaceholderIdPhoto(userId: string): Promise<string> {
 }
 
 type ProviderCategory = "CLEANING" | "AIRCON" | "LAUNDRY";
+type Gender = "MALE" | "FEMALE" | "OTHER";
 
 async function upsertUser(data: {
   name: string;
@@ -31,11 +32,13 @@ async function upsertUser(data: {
   password: string;
   role: "CUSTOMER" | "PROVIDER" | "ADMIN";
   providerCategory?: ProviderCategory;
+  gender?: Gender;
   isOnline?: boolean;
   ratingSum?: number;
   ratingCount?: number;
   verificationStatus?: "UNSUBMITTED" | "PENDING" | "APPROVED" | "REJECTED";
   withIdPhoto?: boolean;
+  withProfilePhoto?: boolean;
   rejectionReason?: string;
 }) {
   const passwordHash = await bcrypt.hash(data.password, 10);
@@ -48,6 +51,7 @@ async function upsertUser(data: {
       passwordHash,
       role: data.role,
       providerCategory: data.providerCategory,
+      gender: data.gender,
       isOnline: data.isOnline ?? false,
       ratingSum: data.ratingSum ?? 0,
       ratingCount: data.ratingCount ?? 0,
@@ -57,10 +61,18 @@ async function upsertUser(data: {
   });
 
   if (data.withIdPhoto && !user.idPhotoPath) {
-    const filename = await writePlaceholderIdPhoto(user.id);
+    const filename = await writePlaceholderPhoto(user.id, "id-photos");
     await prisma.user.update({
       where: { id: user.id },
       data: { idPhotoPath: filename, idPhotoSubmittedAt: new Date() },
+    });
+  }
+
+  if (data.withProfilePhoto && !user.profilePhotoPath) {
+    const filename = await writePlaceholderPhoto(user.id, "profile-photos");
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { profilePhotoPath: filename, profilePhotoSubmittedAt: new Date() },
     });
   }
 
@@ -82,11 +94,13 @@ async function main() {
     password: "provider123",
     role: "PROVIDER",
     providerCategory: "CLEANING",
+    gender: "MALE",
     isOnline: true,
     ratingSum: 47,
-    ratingCount: 10,
+    ratingCount: 10, // 4.7 avg — verified, but below the Superman/Superwoman bar
     verificationStatus: "APPROVED",
     withIdPhoto: true,
+    withProfilePhoto: true,
   });
   await upsertUser({
     name: "Jordan Blake",
@@ -94,11 +108,13 @@ async function main() {
     password: "provider123",
     role: "PROVIDER",
     providerCategory: "CLEANING",
+    gender: "FEMALE",
     isOnline: true,
     ratingSum: 40,
-    ratingCount: 8,
+    ratingCount: 8, // 5.0 avg over 8 jobs — qualifies for "Superwoman"
     verificationStatus: "APPROVED",
     withIdPhoto: true,
+    withProfilePhoto: true,
   });
   await upsertUser({
     name: "Sam Nguyen",
@@ -106,8 +122,9 @@ async function main() {
     password: "provider123",
     role: "PROVIDER",
     providerCategory: "CLEANING",
+    gender: "MALE",
     verificationStatus: "PENDING",
-    withIdPhoto: true,
+    withIdPhoto: true, // no profile photo yet — demonstrates the admin queue gating on it
   });
   await upsertUser({
     name: "Maria Santos",
@@ -125,11 +142,13 @@ async function main() {
     password: "provider123",
     role: "PROVIDER",
     providerCategory: "AIRCON",
+    gender: "MALE",
     isOnline: true,
     ratingSum: 44,
-    ratingCount: 9,
+    ratingCount: 9, // 4.89 avg — qualifies for "Superman"
     verificationStatus: "APPROVED",
     withIdPhoto: true,
+    withProfilePhoto: true,
   });
 
   // Laundry Service
@@ -139,11 +158,13 @@ async function main() {
     password: "provider123",
     role: "PROVIDER",
     providerCategory: "LAUNDRY",
+    gender: "FEMALE",
     isOnline: true,
     ratingSum: 46,
-    ratingCount: 10,
+    ratingCount: 10, // 4.6 avg — verified, but below the Superman/Superwoman bar
     verificationStatus: "APPROVED",
     withIdPhoto: true,
+    withProfilePhoto: true,
   });
 
   await upsertUser({
@@ -156,10 +177,10 @@ async function main() {
   console.log("Seed complete. Sample accounts (password shown per account):");
   console.log("  admin@needhelp.test / admin123");
   console.log("  alex.cleaning@needhelp.test / provider123 (cleaning, verified, online)");
-  console.log("  jordan.cleaning@needhelp.test / provider123 (cleaning, verified, online)");
-  console.log("  sam.cleaning@needhelp.test / provider123 (cleaning, ID pending review)");
+  console.log("  jordan.cleaning@needhelp.test / provider123 (cleaning, verified, online, Superwoman)");
+  console.log("  sam.cleaning@needhelp.test / provider123 (cleaning, ID pending, no profile photo)");
   console.log("  maria.cleaning@needhelp.test / provider123 (cleaning, no ID submitted)");
-  console.log("  ramon.aircon@needhelp.test / provider123 (aircon, verified, online)");
+  console.log("  ramon.aircon@needhelp.test / provider123 (aircon, verified, online, Superman)");
   console.log("  liza.laundry@needhelp.test / provider123 (laundry, verified, online)");
   console.log("  customer@needhelp.test / customer123");
 }

@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PROVIDER_CATEGORIES, type ProviderCategoryId } from "@/lib/config";
+import { PROVIDER_CATEGORIES, type ProviderCategoryId, type Gender } from "@/lib/config";
 
 function SignupForm() {
   const router = useRouter();
@@ -13,6 +13,7 @@ function SignupForm() {
 
   const [role, setRole] = useState<"CUSTOMER" | "PROVIDER">(initialRole);
   const [providerCategory, setProviderCategory] = useState<ProviderCategoryId>(initialCategory);
+  const [gender, setGender] = useState<Gender | "">("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -33,6 +34,7 @@ function SignupForm() {
         password,
         role,
         providerCategory: role === "PROVIDER" ? providerCategory : undefined,
+        gender: role === "PROVIDER" && gender ? gender : undefined,
         phone,
       }),
     });
@@ -55,14 +57,14 @@ function SignupForm() {
         <button
           type="button"
           onClick={() => setRole("CUSTOMER")}
-          className={`flex-1 rounded-full py-2 ${role === "CUSTOMER" ? "bg-teal-600 text-white" : "text-zinc-600"}`}
+          className={`flex-1 rounded-full py-2 ${role === "CUSTOMER" ? "bg-brand-600 text-white" : "text-zinc-600"}`}
         >
           I need help
         </button>
         <button
           type="button"
           onClick={() => setRole("PROVIDER")}
-          className={`flex-1 rounded-full py-2 ${role === "PROVIDER" ? "bg-teal-600 text-white" : "text-zinc-600"}`}
+          className={`flex-1 rounded-full py-2 ${role === "PROVIDER" ? "bg-brand-600 text-white" : "text-zinc-600"}`}
         >
           I provide a service
         </button>
@@ -82,6 +84,25 @@ function SignupForm() {
               </option>
             ))}
           </select>
+        </label>
+      )}
+
+      {role === "PROVIDER" && (
+        <label className="mt-4 flex flex-col gap-1 text-sm font-medium text-zinc-700">
+          Gender (optional)
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value as Gender | "")}
+            className="input"
+          >
+            <option value="">Prefer not to say</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <span className="text-xs font-normal text-zinc-400">
+            Used to personalize your top-performer badge (Superman / Superwoman).
+          </span>
         </label>
       )}
 
@@ -130,7 +151,7 @@ function SignupForm() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 rounded-full bg-teal-600 py-2.5 font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+          className="mt-2 rounded-full bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Sign up"}
         </button>
@@ -138,7 +159,7 @@ function SignupForm() {
 
       <p className="mt-6 text-center text-sm text-zinc-500">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-teal-700">
+        <Link href="/login" className="font-medium text-brand-700">
           Log in
         </Link>
       </p>

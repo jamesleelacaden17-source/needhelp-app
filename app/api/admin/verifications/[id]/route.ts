@@ -29,8 +29,16 @@ export async function PATCH(
   if (!provider || provider.role !== "PROVIDER") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (!provider.idPhotoPath) {
-    return NextResponse.json({ error: "No ID photo submitted" }, { status: 409 });
+  if (action === "approve") {
+    if (!provider.idPhotoPath) {
+      return NextResponse.json({ error: "No ID photo submitted" }, { status: 409 });
+    }
+    if (!provider.profilePhotoPath) {
+      return NextResponse.json(
+        { error: "Provider hasn't uploaded a profile photo yet" },
+        { status: 409 }
+      );
+    }
   }
 
   const updated = await prisma.user.update({

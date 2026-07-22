@@ -10,6 +10,56 @@ export const MAX_HOURS = 12;
 
 export type ProviderCategoryId = "CLEANING" | "AIRCON" | "LAUNDRY" | "CAR_SERVICE";
 
+export type Gender = "MALE" | "FEMALE" | "OTHER";
+
+// A provider earns the top-performer title once they've built up a strong
+// track record: a high average rating over a meaningful number of jobs.
+export const SUPER_BADGE_MIN_RATING = 4.8;
+export const SUPER_BADGE_MIN_JOBS = 5;
+
+export function getSuperBadge(
+  gender: Gender | null | undefined,
+  avgRating: number | null,
+  ratingCount: number
+): string | null {
+  if (avgRating == null || avgRating < SUPER_BADGE_MIN_RATING) return null;
+  if (ratingCount < SUPER_BADGE_MIN_JOBS) return null;
+  if (gender === "MALE") return "Superman";
+  if (gender === "FEMALE") return "Superwoman";
+  return "Super Pro";
+}
+
+export type PublicProviderSource = {
+  id: string;
+  name: string;
+  lastLat: number | null;
+  lastLng: number | null;
+  lastLocationAt: Date | null;
+  verificationStatus: string;
+  profilePhotoPath: string | null;
+  gender: string | null;
+  ratingSum: number;
+  ratingCount: number;
+};
+
+// The safe, customer-facing view of a provider — never includes
+// passwordHash, email, ID photo path, or other private fields.
+export function toPublicProvider(p: PublicProviderSource) {
+  const avgRating = p.ratingCount > 0 ? p.ratingSum / p.ratingCount : null;
+  return {
+    id: p.id,
+    name: p.name,
+    lastLat: p.lastLat,
+    lastLng: p.lastLng,
+    lastLocationAt: p.lastLocationAt,
+    verificationStatus: p.verificationStatus,
+    profilePhotoPath: p.profilePhotoPath,
+    avgRating,
+    ratingCount: p.ratingCount,
+    superBadge: getSuperBadge(p.gender as Gender | null, avgRating, p.ratingCount),
+  };
+}
+
 export const PROVIDER_CATEGORIES: { id: ProviderCategoryId; label: string; providerLabel: string }[] = [
   { id: "CLEANING", label: "Home Cleaning", providerLabel: "Cleaner" },
   { id: "AIRCON", label: "Aircon Cleaning", providerLabel: "Aircon Technician" },

@@ -2,7 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { SERVICE_TYPES, calculateBookingPrice, MIN_HOURS, MAX_HOURS } from "@/lib/config";
+import { SERVICE_TYPES, calculateBookingPrice, MIN_HOURS, MAX_HOURS, toPublicProvider } from "@/lib/config";
+
+const PROVIDER_SELECT = {
+  id: true,
+  name: true,
+  lastLat: true,
+  lastLng: true,
+  lastLocationAt: true,
+  verificationStatus: true,
+  profilePhotoPath: true,
+  gender: true,
+  ratingSum: true,
+  ratingCount: true,
+} as const;
 
 const ACTIVE_STATUSES = ["ASSIGNED", "IN_PROGRESS"] as const;
 const SERVICE_TYPE_IDS = SERVICE_TYPES.map((s) => s.id) as [string, ...string[]];
@@ -100,10 +113,12 @@ export async function POST(request: NextRequest) {
       notes,
       assignedAt: provider ? new Date() : null,
     },
-    include: { provider: true },
+    include: { provider: { select: PROVIDER_SELECT } },
   });
 
-  return NextResponse.json({ booking });
+  return NextResponse.json({
+    booking: { ...booking, provider: booking.provider ? toPublicProvider(booking.provider) : null },
+  });
 }
 
 export async function GET() {
@@ -123,14 +138,17 @@ export async function GET() {
     where,
     include: {
       customer: { select: { id: true, name: true } },
-      provider: {
-        select: { id: true, name: true, lastLat: true, lastLng: true, lastLocationAt: true },
-      },
+      provider: { select: PROVIDER_SELECT },
       transaction: true,
       rating: true,
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ bookings });
+  return NextResponse.json({
+    bookings: bookings.map((b) => ({
+      ...b,
+      provider: b.provider ? toPublicProvider(b.provider) : null,
+    })),
+  });
 }

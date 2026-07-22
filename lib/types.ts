@@ -1,4 +1,4 @@
-import type { ProviderCategoryId } from "@/lib/config";
+import type { ProviderCategoryId, Gender } from "@/lib/config";
 
 export type Role = "CUSTOMER" | "PROVIDER" | "ADMIN";
 
@@ -11,9 +11,13 @@ export type SessionUser = {
   role: Role;
   isOnline?: boolean;
   avgRating?: number | null;
+  ratingCount?: number;
   verificationStatus?: VerificationStatus;
   rejectionReason?: string | null;
   providerCategory?: ProviderCategoryId | null;
+  gender?: Gender | null;
+  profilePhotoPath?: string | null;
+  superBadge?: string | null;
 };
 
 export type BookingStatus =
@@ -58,6 +62,11 @@ export type Booking = {
     lastLat?: number | null;
     lastLng?: number | null;
     lastLocationAt?: string | null;
+    verificationStatus?: VerificationStatus;
+    profilePhotoPath?: string | null;
+    avgRating?: number | null;
+    ratingCount?: number;
+    superBadge?: string | null;
   } | null;
   transaction?: Transaction | null;
   rating?: Rating | null;

@@ -8,11 +8,11 @@ export type MapMarker = {
   lat: number;
   lng: number;
   label?: string;
-  color?: "teal" | "blue" | "amber";
+  color?: "brand" | "blue" | "amber";
 };
 
 const COLORS: Record<string, string> = {
-  teal: "#0d9488",
+  brand: "#12836a",
   blue: "#2563eb",
   amber: "#d97706",
 };
@@ -20,7 +20,7 @@ const COLORS: Record<string, string> = {
 function makeDivIcon(leaflet: typeof L, color: string) {
   return leaflet.divIcon({
     className: "",
-    html: `<div style="width:18px;height:18px;border-radius:9999px;background:${COLORS[color] ?? COLORS.teal};border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+    html: `<div style="width:18px;height:18px;border-radius:9999px;background:${COLORS[color] ?? COLORS.brand};border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
   });
@@ -92,7 +92,7 @@ export default function LocationMap({
       if (!group) return;
       group.clearLayers();
       markers.forEach((m) => {
-        const marker = L.marker([m.lat, m.lng], { icon: makeDivIcon(L, m.color ?? "teal") });
+        const marker = L.marker([m.lat, m.lng], { icon: makeDivIcon(L, m.color ?? "brand") });
         if (m.label) marker.bindTooltip(m.label, { permanent: false, direction: "top" });
         marker.addTo(group);
       });

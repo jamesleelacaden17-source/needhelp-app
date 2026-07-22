@@ -20,6 +20,12 @@ enum ProviderCategory {
   CAR_SERVICE
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum BookingStatus {
   PENDING
   ASSIGNED
@@ -68,16 +74,21 @@ model User {
   providerCategory ProviderCategory?
   isOnline         Boolean           @default(false)
   bio              String?
+  gender           Gender?
   ratingSum        Int               @default(0)
   ratingCount      Int               @default(0)
 
-  // Provider ID verification
+  // Provider ID verification (private — admin-only, never shown to customers)
   verificationStatus VerificationStatus @default(UNSUBMITTED)
   idPhotoPath         String?
   idPhotoSubmittedAt  DateTime?
   verifiedAt          DateTime?
   verifiedById        String?
   rejectionReason     String?
+
+  // Provider profile photo (public — shown to customers for safety/trust)
+  profilePhotoPath        String?
+  profilePhotoSubmittedAt DateTime?
 
   // Provider live location (updated while on an active job)
   lastLat          Float?

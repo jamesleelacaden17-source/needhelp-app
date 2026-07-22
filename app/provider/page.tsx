@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Booking, SessionUser } from "@/lib/types";
 import { CURRENCY_SYMBOL, PROPERTY_TYPES, PROVIDER_CATEGORIES, getServiceByLabel } from "@/lib/config";
 import LocationMap from "@/app/components/LocationMap";
+import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
 
 const STATUS_LABEL: Record<string, string> = {
   ASSIGNED: "New job — ready to start",
@@ -142,15 +143,29 @@ export default function ProviderDashboard() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Hi {user?.name?.split(" ")[0]} 👋</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {categoryMeta ? `${categoryMeta.providerLabel} · ` : ""}
-            {user?.avgRating != null
-              ? `★ ${user.avgRating.toFixed(1)} average rating`
-              : "No ratings yet"}
-            {" · "}Lifetime payout: {CURRENCY_SYMBOL}{totalEarned.toFixed(2)}
-          </p>
+        <div className="flex items-center gap-3">
+          {user && (
+            <ProviderAvatar
+              providerId={user.id}
+              name={user.name}
+              hasPhoto={!!user.profilePhotoPath}
+              size={52}
+            />
+          )}
+          <div>
+            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-zinc-900">
+              Hi {user?.name?.split(" ")[0]} 👋
+              {isVerified && <VerifiedBadge />}
+              {user?.superBadge && <SuperBadge label={user.superBadge} />}
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              {categoryMeta ? `${categoryMeta.providerLabel} · ` : ""}
+              {user?.avgRating != null
+                ? `★ ${user.avgRating.toFixed(1)} average rating`
+                : "No ratings yet"}
+              {" · "}Lifetime payout: {CURRENCY_SYMBOL}{totalEarned.toFixed(2)}
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <button
@@ -169,6 +184,7 @@ export default function ProviderDashboard() {
         </div>
       </div>
 
+      {user && !isVerified && <ProfilePhotoPanel user={user} onUpdated={loadAll} />}
       {user && !isVerified && (
         <VerificationPanel user={user} onUpdated={loadAll} />
       )}
@@ -208,14 +224,14 @@ export default function ProviderDashboard() {
                   <LocationMap
                     center={[b.customerLat, b.customerLng]}
                     markers={[
-                      { id: "house", lat: b.customerLat, lng: b.customerLng, color: "teal", label: "Customer" },
+                      { id: "house", lat: b.customerLat, lng: b.customerLng, color: "brand", label: "Customer" },
                     ]}
                   />
                   <a
                     href={directionsUrl(b.customerLat, b.customerLng)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-block text-xs font-medium text-teal-700 hover:underline"
+                    className="mt-1 inline-block text-xs font-medium text-brand-700 hover:underline"
                   >
                     Get directions →
                   </a>
@@ -229,7 +245,7 @@ export default function ProviderDashboard() {
                     {b.status === "ASSIGNED" && (
                       <button
                         onClick={() => updateBooking(b.id, "start")}
-                        className="rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700"
+                        className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
                       >
                         Start job
                       </button>
@@ -237,7 +253,7 @@ export default function ProviderDashboard() {
                     {b.status === "IN_PROGRESS" && (
                       <button
                         onClick={() => updateBooking(b.id, "complete")}
-                        className="rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700"
+                        className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
                       >
                         Mark complete
                       </button>
@@ -284,6 +300,72 @@ export default function ProviderDashboard() {
         </section>
       )}
     </main>
+  );
+}
+
+function ProfilePhotoPanel({
+  user,
+  onUpdated,
+}: {
+  user: SessionUser;
+  onUpdated: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleUpload() {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append("photo", file);
+    const res = await fetch("/api/provider/profile-photo", {
+      method: "POST",
+      body: formData,
+    });
+    setUploading(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? "Upload failed");
+      return;
+    }
+    setFile(null);
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6 rounded-xl border border-brand-200 bg-brand-50 p-4">
+      <div className="flex items-start gap-3">
+        <ProviderAvatar providerId={user.id} name={user.name} hasPhoto={!!user.profilePhotoPath} size={48} />
+        <div>
+          <p className="text-sm font-medium text-brand-900">
+            {user.profilePhotoPath ? "Profile photo on file" : "Profile photo required"}
+          </p>
+          <p className="mt-1 text-sm text-brand-800">
+            For customer safety, upload a clear photo of your face. Customers will see this
+            photo so they know exactly who&apos;s arriving — it&apos;s required before you can be
+            approved.
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className="text-sm text-zinc-700"
+        />
+        <button
+          onClick={handleUpload}
+          disabled={!file || uploading}
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+        >
+          {uploading ? "Uploading…" : user.profilePhotoPath ? "Replace photo" : "Upload photo"}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
   );
 }
 
@@ -351,7 +433,7 @@ function VerificationPanel({
         <button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
           {uploading ? "Uploading…" : "Submit ID"}
         </button>

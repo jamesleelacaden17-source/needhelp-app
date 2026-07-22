@@ -18,6 +18,7 @@ export async function GET() {
       providerCategory: true,
       verificationStatus: true,
       idPhotoSubmittedAt: true,
+      profilePhotoPath: true,
       rejectionReason: true,
     },
     orderBy: { idPhotoSubmittedAt: "asc" },

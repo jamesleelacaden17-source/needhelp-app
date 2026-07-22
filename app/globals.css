@@ -12,6 +12,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+  --color-brand-50: #eefcf7;
+  --color-brand-100: #d3f6e8;
+  --color-brand-200: #a6ecd2;
+  --color-brand-300: #70dab8;
+  --color-brand-400: #3ec29c;
+  --color-brand-500: #1fa583;
+  --color-brand-600: #12836a;
+  --color-brand-700: #0f6a56;
+  --color-brand-800: #105546;
+  --color-brand-900: #0f463b;
+}
+
 body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -19,6 +32,6 @@ body {
 
 @layer components {
   .input {
-    @apply rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500;
+    @apply rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500;
   }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCY_SYMBOL, PROVIDER_CATEGORIES } from "@/lib/config";
+import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
 
 const CATEGORY_LABEL = Object.fromEntries(PROVIDER_CATEGORIES.map((c) => [c.id, c.label]));
 
@@ -31,6 +32,8 @@ type Stats = {
     avgRating: number | null;
     verificationStatus: string;
     providerCategory: string;
+    profilePhotoPath: string | null;
+    superBadge: string | null;
   }[];
 };
 
@@ -50,6 +53,7 @@ type VerificationProvider = {
   providerCategory: string;
   verificationStatus: string;
   idPhotoSubmittedAt: string | null;
+  profilePhotoPath: string | null;
   rejectionReason: string | null;
 };
 
@@ -186,7 +190,13 @@ export default function AdminDashboard() {
             <tbody>
               {stats.providers.map((p) => (
                 <tr key={p.id} className="border-t border-zinc-100">
-                  <td className="px-4 py-2">{p.name}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <ProviderAvatar providerId={p.id} name={p.name} hasPhoto={!!p.profilePhotoPath} size={28} />
+                      <span>{p.name}</span>
+                      {p.superBadge && <SuperBadge label={p.superBadge} />}
+                    </div>
+                  </td>
                   <td className="px-4 py-2">{CATEGORY_LABEL[p.providerCategory] ?? p.providerCategory}</td>
                   <td className="px-4 py-2">
                     <span
@@ -231,7 +241,7 @@ export default function AdminDashboard() {
                   <td className="px-4 py-2">{t.booking.customer.name}</td>
                   <td className="px-4 py-2">{t.booking.provider?.name ?? "—"}</td>
                   <td className="px-4 py-2">{CURRENCY_SYMBOL}{t.amount.toFixed(2)}</td>
-                  <td className="px-4 py-2 font-medium text-teal-700">
+                  <td className="px-4 py-2 font-medium text-brand-700">
                     {CURRENCY_SYMBOL}{t.commissionAmount.toFixed(2)}
                   </td>
                   <td className="px-4 py-2">
@@ -284,26 +294,53 @@ function VerificationCard({
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function decide(action: "approve" | "reject") {
     setBusy(true);
-    await fetch(`/api/admin/verifications/${provider.id}`, {
+    setError(null);
+    const res = await fetch(`/api/admin/verifications/${provider.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, reason: reason || undefined }),
     });
     setBusy(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? "Could not update verification");
+      return;
+    }
     onDecided();
   }
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-start">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`/api/uploads/id-photo/${provider.id}`}
-        alt={`${provider.name}'s ID`}
-        className="h-40 w-full rounded-lg border border-zinc-200 object-cover sm:h-28 sm:w-40"
-      />
+      <div className="flex gap-2">
+        <div className="flex flex-col items-center gap-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/uploads/id-photo/${provider.id}`}
+            alt={`${provider.name}'s ID`}
+            className="h-28 w-32 rounded-lg border border-zinc-200 object-cover"
+          />
+          <span className="text-[10px] font-medium text-zinc-400">Government ID (private)</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          {provider.profilePhotoPath ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/uploads/profile-photo/${provider.id}`}
+              alt={`${provider.name}'s profile photo`}
+              className="h-28 w-28 rounded-lg border border-zinc-200 object-cover"
+            />
+          ) : (
+            <div className="flex h-28 w-28 items-center justify-center rounded-lg border border-dashed border-amber-300 bg-amber-50 text-center text-[11px] text-amber-700">
+              No profile photo yet
+            </div>
+          )}
+          <span className="text-[10px] font-medium text-zinc-400">Public profile photo</span>
+        </div>
+      </div>
       <div className="flex-1">
         <div className="flex items-center justify-between">
           <span className="font-medium text-zinc-900">
@@ -319,6 +356,7 @@ function VerificationCard({
         {provider.rejectionReason && (
           <p className="mt-1 text-sm text-red-600">Previous reason: {provider.rejectionReason}</p>
         )}
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
 
         {showRejectForm ? (
           <div className="mt-3 flex flex-col gap-2">
@@ -349,7 +387,7 @@ function VerificationCard({
             <button
               onClick={() => decide("approve")}
               disabled={busy}
-              className="rounded-full bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+              className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
             >
               Approve
             </button>
@@ -401,7 +439,7 @@ function PayoutCell({
         <button
           onClick={retry}
           disabled={busy}
-          className="text-xs font-medium text-teal-700 hover:underline disabled:opacity-60"
+          className="text-xs font-medium text-brand-700 hover:underline disabled:opacity-60"
         >
           {busy ? "Sending…" : "Send now"}
         </button>
@@ -498,14 +536,14 @@ function PayoutSettingsPanel({
           <button
             type="button"
             onClick={() => setDestinationType("GCASH")}
-            className={`rounded-full px-4 py-1.5 ${destinationType === "GCASH" ? "bg-teal-600 text-white" : "text-zinc-600"}`}
+            className={`rounded-full px-4 py-1.5 ${destinationType === "GCASH" ? "bg-brand-600 text-white" : "text-zinc-600"}`}
           >
             GCash
           </button>
           <button
             type="button"
             onClick={() => setDestinationType("BANK")}
-            className={`rounded-full px-4 py-1.5 ${destinationType === "BANK" ? "bg-teal-600 text-white" : "text-zinc-600"}`}
+            className={`rounded-full px-4 py-1.5 ${destinationType === "BANK" ? "bg-brand-600 text-white" : "text-zinc-600"}`}
           >
             Bank account
           </button>
@@ -577,7 +615,7 @@ function PayoutSettingsPanel({
         <button
           type="submit"
           disabled={saving || !bankCode}
-          className="self-start rounded-full bg-teal-600 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+          className="self-start rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save payout destination"}
         </button>
@@ -590,7 +628,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-medium text-zinc-500">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${highlight ? "text-teal-600" : "text-zinc-900"}`}>
+      <p className={`mt-1 text-xl font-bold ${highlight ? "text-brand-600" : "text-zinc-900"}`}>
         {value}
       </p>
     </div>
