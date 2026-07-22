@@ -50,7 +50,7 @@ function SignupForm() {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-      <h1 className="text-2xl font-bold text-zinc-900">Create your account</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-ink-950">Create your account</h1>
       <p className="mt-1 text-sm text-zinc-500">Join NeedHelp as a customer or service provider.</p>
 
       <div className="mt-6 flex rounded-full border border-zinc-300 bg-white p-1 text-sm font-medium">

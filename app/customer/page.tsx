@@ -180,7 +180,7 @@ export default function CustomerDashboard() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
-      <h1 className="text-2xl font-bold text-zinc-900">Hi {user?.name?.split(" ")[0]} 👋</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-ink-950">Hi {user?.name?.split(" ")[0]} 👋</h1>
       <p className="mt-1 text-sm text-zinc-500">Book help instantly, or check on an active job.</p>
 
       <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

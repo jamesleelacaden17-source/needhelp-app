@@ -121,7 +121,7 @@ export default function AdminDashboard() {
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
-      <h1 className="text-2xl font-bold text-zinc-900">Platform overview</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-ink-950">Platform overview</h1>
       <p className="mt-1 text-sm text-zinc-500">Commission earned on every completed job.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

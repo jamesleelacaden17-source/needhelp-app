@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
 @theme {
@@ -23,6 +24,14 @@
   --color-brand-700: #0f6a56;
   --color-brand-800: #105546;
   --color-brand-900: #0f463b;
+
+  /* Deep, slightly-green-tinted near-black used for premium dark sections
+     and high-contrast headings — ties back to the brand teal instead of
+     reading as generic gray/black. */
+  --color-ink-950: #06120f;
+  --color-ink-900: #0a1a16;
+  --color-ink-800: #122a24;
+  --color-ink-700: #1b3b33;
 }
 
 body {

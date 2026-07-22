@@ -160,7 +160,7 @@ export default function ProviderDashboard() {
             />
           )}
           <div>
-            <h1 className="flex flex-wrap items-center gap-2 text-xl font-bold text-zinc-900 sm:text-2xl">
+            <h1 className="flex flex-wrap items-center gap-2 font-[family-name:var(--font-display)] text-xl font-bold text-ink-950 sm:text-2xl">
               Hi {user?.name?.split(" ")[0]} 👋
               {isVerified && <VerifiedBadge />}
               {user?.superBadge && <SuperBadge label={user.superBadge} />}
