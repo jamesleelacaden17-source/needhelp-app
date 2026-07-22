@@ -2,8 +2,14 @@ export const PLATFORM_COMMISSION_RATE = 0.2; // 20% platform commission per comp
 
 export const CURRENCY_SYMBOL = "₱";
 
-// Default map center: Vigan City, Ilocos Sur, Philippines
-export const DEFAULT_MAP_CENTER: [number, number] = [17.5747, 120.3869];
+// Fallback map view before we know the customer's location — centered on
+// the Philippines as a whole (not any single city) so the app looks and
+// behaves the same whether the customer is in Vigan, Manila, Cebu, or
+// Davao. Real position comes from browser geolocation when available; see
+// PH_MAP_ZOOM (country-wide) vs LOCAL_MAP_ZOOM (once we have a real point).
+export const PH_MAP_CENTER: [number, number] = [12.8797, 121.774];
+export const PH_MAP_ZOOM = 6;
+export const LOCAL_MAP_ZOOM = 15;
 
 export const MIN_HOURS = 1;
 export const MAX_HOURS = 12;

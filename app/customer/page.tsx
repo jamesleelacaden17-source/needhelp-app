@@ -12,7 +12,9 @@ import {
   servicesForCategory,
   getServiceByLabel,
   formatScheduledTime,
-  DEFAULT_MAP_CENTER,
+  PH_MAP_CENTER,
+  PH_MAP_ZOOM,
+  LOCAL_MAP_ZOOM,
   MIN_HOURS,
   MAX_HOURS,
   type ProviderCategoryId,
@@ -63,7 +65,10 @@ export default function CustomerDashboard() {
   const [hours, setHours] = useState(2);
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState("");
-  const [pin, setPin] = useState<[number, number]>(DEFAULT_MAP_CENTER);
+  const [pin, setPin] = useState<[number, number]>(PH_MAP_CENTER);
+  const [mapZoom, setMapZoom] = useState(PH_MAP_ZOOM);
+  const [mapReady, setMapReady] = useState(false);
+  const [hasPreciseLocation, setHasPreciseLocation] = useState(false);
   const [notes, setNotes] = useState("");
   const [arrivalMode, setArrivalMode] = useState<"asap" | "scheduled">("asap");
   const [scheduledFor, setScheduledFor] = useState("");
@@ -82,6 +87,28 @@ export default function CustomerDashboard() {
       const data = await res.json();
       setBookings(data.bookings);
     }
+  }, []);
+
+  // Center the pin-drop map on the customer's real location wherever they
+  // are in the Philippines. If geolocation is unavailable or denied, fall
+  // back to a whole-country view they can pan/zoom into themselves — never
+  // a hardcoded city, so this keeps working unchanged as the app expands
+  // to new areas.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setMapReady(true);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPin([pos.coords.latitude, pos.coords.longitude]);
+        setMapZoom(LOCAL_MAP_ZOOM);
+        setHasPreciseLocation(true);
+        setMapReady(true);
+      },
+      () => setMapReady(true),
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
+    );
   }, []);
 
   useEffect(() => {
@@ -287,13 +314,28 @@ export default function CustomerDashboard() {
             <span className="text-sm font-medium text-zinc-700">
               Pin your exact location (tap the map)
             </span>
-            <LocationMap
-              center={pin}
-              markers={[{ id: "pin", lat: pin[0], lng: pin[1], color: "brand" }]}
-              onPick={(lat, lng) => setPin([lat, lng])}
-            />
+            {mapReady ? (
+              <LocationMap
+                center={pin}
+                zoom={mapZoom}
+                markers={[{ id: "pin", lat: pin[0], lng: pin[1], color: "brand" }]}
+                onPick={(lat, lng) => {
+                  setPin([lat, lng]);
+                  setHasPreciseLocation(true);
+                }}
+              />
+            ) : (
+              <div
+                style={{ height: "220px" }}
+                className="flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-sm text-zinc-400"
+              >
+                Finding your location…
+              </div>
+            )}
             <span className="text-xs text-zinc-400">
-              {pin[0].toFixed(5)}, {pin[1].toFixed(5)}
+              {hasPreciseLocation
+                ? `${pin[0].toFixed(5)}, ${pin[1].toFixed(5)}`
+                : "Showing the Philippines — pan and tap to drop your pin"}
             </span>
           </div>
 
