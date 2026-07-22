@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Booking, SessionUser } from "@/lib/types";
-import { CURRENCY_SYMBOL, PROPERTY_TYPES, PROVIDER_CATEGORIES, getServiceByLabel } from "@/lib/config";
+import {
+  CURRENCY_SYMBOL,
+  PROPERTY_TYPES,
+  PROVIDER_CATEGORIES,
+  getServiceByLabel,
+  formatScheduledTime,
+} from "@/lib/config";
 import LocationMap from "@/app/components/LocationMap";
 import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
 
@@ -119,7 +125,7 @@ export default function ProviderDashboard() {
     setUser((u) => (u ? { ...u, isOnline: data.isOnline } : u));
   }
 
-  async function updateBooking(id: string, action: "start" | "complete" | "cancel") {
+  async function updateBooking(id: string, action: "accept" | "decline" | "start" | "complete" | "cancel") {
     await fetch(`/api/bookings/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -130,6 +136,7 @@ export default function ProviderDashboard() {
 
   if (user === undefined) return null;
 
+  const incomingRequests = bookings.filter((b) => b.status === "PENDING");
   const activeJobs = bookings.filter((b) => ["ASSIGNED", "IN_PROGRESS"].includes(b.status));
   const pastJobs = bookings.filter((b) => ["COMPLETED", "CANCELLED"].includes(b.status));
   const totalEarned = pastJobs.reduce(
@@ -197,6 +204,55 @@ export default function ProviderDashboard() {
         </p>
       )}
 
+      {incomingRequests.length > 0 && (
+        <section className="mt-8">
+          <h2 className="font-semibold text-zinc-900">
+            New requests{" "}
+            <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              {incomingRequests.length}
+            </span>
+          </h2>
+          <div className="mt-3 flex flex-col gap-3">
+            {incomingRequests.map((b) => (
+              <div key={b.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-zinc-900">{b.serviceType}</span>
+                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                    Awaiting your response
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-zinc-600">{b.address}</p>
+                <p className="mt-1 text-sm text-zinc-600">{bookingSubtitle(b)}</p>
+                <p className="mt-1 text-sm font-medium text-zinc-700">
+                  🕐 {formatScheduledTime(b.scheduledFor)}
+                </p>
+                {b.notes && <p className="mt-1 text-sm text-zinc-600">Notes: {b.notes}</p>}
+
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-zinc-900">
+                    {CURRENCY_SYMBOL}{b.price.toFixed(2)}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateBooking(b.id, "decline")}
+                      className="rounded-full border border-red-300 px-4 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      onClick={() => updateBooking(b.id, "accept")}
+                      className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+                    >
+                      Accept
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="mt-8">
         <h2 className="font-semibold text-zinc-900">Active jobs</h2>
         {activeJobs.length === 0 ? (
@@ -218,6 +274,7 @@ export default function ProviderDashboard() {
                 <p className="mt-1 text-sm text-zinc-500">
                   {bookingSubtitle(b)}
                 </p>
+                <p className="mt-1 text-sm text-zinc-500">🕐 {formatScheduledTime(b.scheduledFor)}</p>
                 {b.notes && <p className="mt-1 text-sm text-zinc-500">Notes: {b.notes}</p>}
 
                 <div className="mt-3">

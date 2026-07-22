@@ -118,6 +118,12 @@ model Booking {
   price          Float
   notes          String?
 
+  // Customer's requested arrival time — null means "as soon as possible"
+  scheduledFor         DateTime?
+  // Comma-separated provider IDs who declined this request, so re-matching
+  // after a decline never re-offers it to the same provider
+  declinedProviderIds  String    @default("")
+
   // Real payment collection (PayMongo)
   paymentStatus            PaymentStatus @default(UNPAID)
   paymongoCheckoutSessionId String?

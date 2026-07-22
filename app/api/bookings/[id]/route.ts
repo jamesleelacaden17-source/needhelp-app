@@ -3,9 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { PLATFORM_COMMISSION_RATE } from "@/lib/config";
+import { findAvailableProvider, parseDeclinedIds, addDeclinedId } from "@/lib/matching";
 
 const updateSchema = z.object({
-  action: z.enum(["start", "complete", "cancel"]),
+  action: z.enum(["accept", "decline", "start", "complete", "cancel"]),
 });
 
 export async function GET(
@@ -61,6 +62,49 @@ export async function PATCH(
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (action === "accept") {
+    if (session.role !== "PROVIDER" || booking.providerId !== session.userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (booking.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "This request is no longer pending" },
+        { status: 409 }
+      );
+    }
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: { status: "ASSIGNED", assignedAt: new Date() },
+    });
+    return NextResponse.json({ booking: updated });
+  }
+
+  if (action === "decline") {
+    if (session.role !== "PROVIDER" || booking.providerId !== session.userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (booking.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "This request is no longer pending" },
+        { status: 409 }
+      );
+    }
+    const declinedProviderIds = addDeclinedId(booking.declinedProviderIds, session.userId);
+    const nextProvider = await findAvailableProvider(
+      booking.category,
+      parseDeclinedIds(declinedProviderIds)
+    );
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: {
+        declinedProviderIds,
+        providerId: nextProvider?.id ?? null,
+        status: nextProvider ? "PENDING" : "NO_PROVIDERS_AVAILABLE",
+      },
+    });
+    return NextResponse.json({ booking: updated });
   }
 
   if (action === "start") {

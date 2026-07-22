@@ -47,6 +47,7 @@ export type Booking = {
   estimatedHours: number;
   price: number;
   notes: string | null;
+  scheduledFor: string | null;
   paymentStatus: PaymentStatus;
   paymongoCheckoutUrl: string | null;
   paidAt: string | null;

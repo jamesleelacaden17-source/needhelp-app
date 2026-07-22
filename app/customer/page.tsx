@@ -11,6 +11,7 @@ import {
   calculateBookingPrice,
   servicesForCategory,
   getServiceByLabel,
+  formatScheduledTime,
   DEFAULT_MAP_CENTER,
   MIN_HOURS,
   MAX_HOURS,
@@ -20,7 +21,7 @@ import LocationMap from "@/app/components/LocationMap";
 import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
 
 const STATUS_LABEL: Record<string, string> = {
-  PENDING: "Pending",
+  PENDING: "Waiting for a provider to accept",
   ASSIGNED: "Provider on the way",
   IN_PROGRESS: "Job in progress",
   COMPLETED: "Completed",
@@ -29,7 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  PENDING: "bg-zinc-100 text-zinc-700",
+  PENDING: "bg-amber-100 text-amber-700",
   ASSIGNED: "bg-blue-100 text-blue-700",
   IN_PROGRESS: "bg-amber-100 text-amber-700",
   COMPLETED: "bg-green-100 text-green-700",
@@ -64,8 +65,16 @@ export default function CustomerDashboard() {
   const [address, setAddress] = useState("");
   const [pin, setPin] = useState<[number, number]>(DEFAULT_MAP_CENTER);
   const [notes, setNotes] = useState("");
+  const [arrivalMode, setArrivalMode] = useState<"asap" | "scheduled">("asap");
+  const [scheduledFor, setScheduledFor] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const minScheduleValue = useMemo(() => {
+    const d = new Date(Date.now() + 20 * 60 * 1000);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  }, []);
 
   const loadBookings = useCallback(async () => {
     const res = await fetch("/api/bookings");
@@ -128,6 +137,10 @@ export default function CustomerDashboard() {
         hours: selectedService.pricingMode === "hourly" ? Number(hours) : undefined,
         quantity: selectedService.pricingMode === "perUnit" ? Number(quantity) : undefined,
         notes,
+        scheduledFor:
+          arrivalMode === "scheduled" && scheduledFor
+            ? new Date(scheduledFor).toISOString()
+            : undefined,
       }),
     });
     setSubmitting(false);
@@ -138,6 +151,8 @@ export default function CustomerDashboard() {
     }
     setAddress("");
     setNotes("");
+    setArrivalMode("asap");
+    setScheduledFor("");
     await loadBookings();
   }
 
@@ -282,6 +297,36 @@ export default function CustomerDashboard() {
             </span>
           </div>
 
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-zinc-700">When do you need this?</span>
+            <div className="flex rounded-full border border-zinc-300 bg-zinc-50 p-1 text-sm font-medium w-fit">
+              <button
+                type="button"
+                onClick={() => setArrivalMode("asap")}
+                className={`rounded-full px-4 py-1.5 ${arrivalMode === "asap" ? "bg-brand-600 text-white" : "text-zinc-600"}`}
+              >
+                As soon as possible
+              </button>
+              <button
+                type="button"
+                onClick={() => setArrivalMode("scheduled")}
+                className={`rounded-full px-4 py-1.5 ${arrivalMode === "scheduled" ? "bg-brand-600 text-white" : "text-zinc-600"}`}
+              >
+                Schedule for later
+              </button>
+            </div>
+            {arrivalMode === "scheduled" && (
+              <input
+                type="datetime-local"
+                required
+                min={minScheduleValue}
+                value={scheduledFor}
+                onChange={(e) => setScheduledFor(e.target.value)}
+                className="input w-fit"
+              />
+            )}
+          </div>
+
           <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700">
             Notes (optional)
             <textarea
@@ -360,8 +405,9 @@ function ActiveBookingCard({
       </div>
       <p className="mt-1 text-sm text-zinc-500">{b.address}</p>
       <p className="mt-1 text-sm text-zinc-500">{bookingSubtitle(b)}</p>
+      <p className="mt-1 text-sm text-zinc-500">🕐 {formatScheduledTime(b.scheduledFor)}</p>
 
-      {b.provider ? (
+      {b.status !== "PENDING" && b.provider ? (
         <div className="mt-2 flex items-center gap-2">
           <ProviderAvatar
             providerId={b.provider.id}
@@ -378,7 +424,9 @@ function ActiveBookingCard({
           </div>
         </div>
       ) : (
-        <p className="mt-1 text-sm text-zinc-500">Searching for a provider…</p>
+        <p className="mt-1 text-sm text-zinc-500">
+          {b.providerId ? "Waiting for a nearby provider to accept your request…" : "Searching for a provider…"}
+        </p>
       )}
 
       {showMap && (

@@ -131,19 +131,69 @@ export const SERVICE_TYPES: ServiceTypeDef[] = [
     ratePerHour: 480,
   },
 
-  // Aircon Cleaning — priced per unit serviced. Market rates for routine
-  // window/split-type cleaning run roughly ₱500–800/unit.
+  // Aircon Cleaning — priced per unit serviced, split out by aircon type
+  // since cleaning complexity (and 2026 PH market rates) vary a lot by
+  // unit configuration: window units are simplest/cheapest, cassette
+  // (ceiling-embedded) units are the most labor-intensive.
   {
-    id: "aircon_cleaning",
+    id: "aircon_window",
     category: "AIRCON",
-    label: "Aircon Cleaning (per unit)",
+    label: "Window Type",
     pricingMode: "perUnit",
-    unitLabel: "aircon unit",
-    pricePerUnit: 650,
+    unitLabel: "unit",
+    pricePerUnit: 350,
+    minUnits: 1,
+    maxUnits: 10,
+    hoursPerUnit: 0.5,
+    baseHours: 0.25,
+  },
+  {
+    id: "aircon_split_wall",
+    category: "AIRCON",
+    label: "Split Type (Wall-Mounted)",
+    pricingMode: "perUnit",
+    unitLabel: "unit",
+    pricePerUnit: 750,
     minUnits: 1,
     maxUnits: 10,
     hoursPerUnit: 0.75,
     baseHours: 0.25,
+  },
+  {
+    id: "aircon_split_floor",
+    category: "AIRCON",
+    label: "Split Type (Floor-Mounted)",
+    pricingMode: "perUnit",
+    unitLabel: "unit",
+    pricePerUnit: 800,
+    minUnits: 1,
+    maxUnits: 10,
+    hoursPerUnit: 0.85,
+    baseHours: 0.25,
+  },
+  {
+    id: "aircon_split_ceiling",
+    category: "AIRCON",
+    label: "Split Type (Ceiling-Suspended)",
+    pricingMode: "perUnit",
+    unitLabel: "unit",
+    pricePerUnit: 1000,
+    minUnits: 1,
+    maxUnits: 10,
+    hoursPerUnit: 1,
+    baseHours: 0.25,
+  },
+  {
+    id: "aircon_cassette",
+    category: "AIRCON",
+    label: "Cassette Type",
+    pricingMode: "perUnit",
+    unitLabel: "unit",
+    pricePerUnit: 1500,
+    minUnits: 1,
+    maxUnits: 10,
+    hoursPerUnit: 1.25,
+    baseHours: 0.5,
   },
 
   // Laundry — priced per kilo, or per piece for dry cleaning. Wash-dry-fold
@@ -173,6 +223,21 @@ export const SERVICE_TYPES: ServiceTypeDef[] = [
     baseHours: 1,
   },
 ];
+
+export function formatScheduledTime(scheduledFor: string | null | undefined): string {
+  if (!scheduledFor) return "As soon as possible";
+  const date = new Date(scheduledFor);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+  const time = date.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+  if (isToday) return `Today · ${time}`;
+  if (isTomorrow) return `Tomorrow · ${time}`;
+  const day = date.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+  return `${day} · ${time}`;
+}
 
 export function servicesForCategory(category: ProviderCategoryId) {
   return SERVICE_TYPES.filter((s) => s.category === category);

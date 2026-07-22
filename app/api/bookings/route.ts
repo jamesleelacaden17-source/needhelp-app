@@ -3,22 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { SERVICE_TYPES, calculateBookingPrice, MIN_HOURS, MAX_HOURS, toPublicProvider } from "@/lib/config";
+import { PROVIDER_SELECT, findAvailableProvider } from "@/lib/matching";
 
-const PROVIDER_SELECT = {
-  id: true,
-  name: true,
-  lastLat: true,
-  lastLng: true,
-  lastLocationAt: true,
-  verificationStatus: true,
-  profilePhotoPath: true,
-  gender: true,
-  ratingSum: true,
-  ratingCount: true,
-} as const;
-
-const ACTIVE_STATUSES = ["ASSIGNED", "IN_PROGRESS"] as const;
 const SERVICE_TYPE_IDS = SERVICE_TYPES.map((s) => s.id) as [string, ...string[]];
+const MIN_SCHEDULE_LEAD_MINUTES = 15;
 
 const createBookingSchema = z
   .object({
@@ -30,6 +18,7 @@ const createBookingSchema = z
     hours: z.number().min(MIN_HOURS).max(MAX_HOURS).optional(),
     quantity: z.number().min(0.5).max(50).optional(),
     notes: z.string().optional(),
+    scheduledFor: z.string().datetime().optional(),
   })
   .refine(
     (data) => {
@@ -42,30 +31,6 @@ const createBookingSchema = z
     },
     { message: "Missing required details for this service" }
   );
-
-async function findAvailableProvider(category: string) {
-  const candidates = await prisma.user.findMany({
-    where: {
-      role: "PROVIDER",
-      providerCategory: category as never,
-      isOnline: true,
-      verificationStatus: "APPROVED",
-      bookingsAsProvider: {
-        none: { status: { in: [...ACTIVE_STATUSES] } },
-      },
-    },
-  });
-
-  if (candidates.length === 0) return null;
-
-  candidates.sort((a, b) => {
-    const avgA = a.ratingCount > 0 ? a.ratingSum / a.ratingCount : 0;
-    const avgB = b.ratingCount > 0 ? b.ratingSum / b.ratingCount : 0;
-    return avgB - avgA;
-  });
-
-  return candidates[0];
-}
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -81,8 +46,27 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  const { serviceType, address, customerLat, customerLng, propertyType, hours, quantity, notes } =
-    parsed.data;
+  const {
+    serviceType,
+    address,
+    customerLat,
+    customerLng,
+    propertyType,
+    hours,
+    quantity,
+    notes,
+    scheduledFor,
+  } = parsed.data;
+
+  if (scheduledFor) {
+    const minTime = Date.now() + MIN_SCHEDULE_LEAD_MINUTES * 60 * 1000;
+    if (new Date(scheduledFor).getTime() < minTime) {
+      return NextResponse.json(
+        { error: `Requested arrival time must be at least ${MIN_SCHEDULE_LEAD_MINUTES} minutes from now` },
+        { status: 400 }
+      );
+    }
+  }
 
   const service = SERVICE_TYPES.find((s) => s.id === serviceType);
   if (!service) {
@@ -99,7 +83,7 @@ export async function POST(request: NextRequest) {
     data: {
       customerId: session.userId,
       providerId: provider?.id ?? null,
-      status: provider ? "ASSIGNED" : "NO_PROVIDERS_AVAILABLE",
+      status: provider ? "PENDING" : "NO_PROVIDERS_AVAILABLE",
       category: service.category,
       serviceType: service.label,
       address,
@@ -111,7 +95,7 @@ export async function POST(request: NextRequest) {
       estimatedHours: quote.estimatedHours,
       price: quote.price,
       notes,
-      assignedAt: provider ? new Date() : null,
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
     },
     include: { provider: { select: PROVIDER_SELECT } },
   });
