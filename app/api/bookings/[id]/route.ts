@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { PLATFORM_COMMISSION_RATE } from "@/lib/config";
+import { PLATFORM_COMMISSION_RATE, calculateTravelFee } from "@/lib/config";
 import { findAvailableProvider, parseDeclinedIds, addDeclinedId } from "@/lib/matching";
+import { haversineDistanceKm } from "@/lib/geo";
 
 const updateSchema = z.object({
   action: z.enum(["accept", "decline", "start", "complete", "cancel"]),
@@ -96,12 +97,33 @@ export async function PATCH(
       booking.category,
       parseDeclinedIds(declinedProviderIds)
     );
+
+    // Re-price against the newly-matched provider's distance — a decline
+    // can hand the job to someone at a very different distance, so the
+    // travel fee (and total price) needs to be recalculated, not carried
+    // over from the provider who just declined.
+    const basePrice = booking.price - (booking.travelFee ?? 0);
+    let distanceKm: number | null = null;
+    let travelFee = 0;
+    if (nextProvider?.lastLat != null && nextProvider?.lastLng != null) {
+      distanceKm = haversineDistanceKm(
+        nextProvider.lastLat,
+        nextProvider.lastLng,
+        booking.customerLat,
+        booking.customerLng
+      );
+      travelFee = calculateTravelFee(distanceKm);
+    }
+
     const updated = await prisma.booking.update({
       where: { id },
       data: {
         declinedProviderIds,
         providerId: nextProvider?.id ?? null,
         status: nextProvider ? "PENDING" : "NO_PROVIDERS_AVAILABLE",
+        price: nextProvider ? basePrice + travelFee : basePrice,
+        distanceKm: nextProvider ? distanceKm : null,
+        travelFee: nextProvider ? travelFee : null,
       },
     });
     return NextResponse.json({ booking: updated });
@@ -135,8 +157,13 @@ export async function PATCH(
       );
     }
 
+    // The platform takes commission only on the base service price — the
+    // provider keeps 100% of the travel fee as fair compensation for
+    // distance, on top of their share of the base price.
+    const travelFee = booking.travelFee ?? 0;
+    const baseForCommission = booking.price - travelFee;
     const commissionAmount =
-      Math.round(booking.price * PLATFORM_COMMISSION_RATE * 100) / 100;
+      Math.round(baseForCommission * PLATFORM_COMMISSION_RATE * 100) / 100;
     const providerPayout = Math.round((booking.price - commissionAmount) * 100) / 100;
 
     const [updated] = await prisma.$transaction([

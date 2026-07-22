@@ -46,6 +46,8 @@ export type Booking = {
   quantity: number | null;
   estimatedHours: number;
   price: number;
+  distanceKm: number | null;
+  travelFee: number | null;
   notes: string | null;
   scheduledFor: string | null;
   paymentStatus: PaymentStatus;

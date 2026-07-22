@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { SERVICE_TYPES, calculateBookingPrice, MIN_HOURS, MAX_HOURS, toPublicProvider } from "@/lib/config";
+import {
+  SERVICE_TYPES,
+  calculateBookingPrice,
+  calculateTravelFee,
+  MIN_HOURS,
+  MAX_HOURS,
+  toPublicProvider,
+} from "@/lib/config";
 import { PROVIDER_SELECT, findAvailableProvider } from "@/lib/matching";
+import { haversineDistanceKm } from "@/lib/geo";
 
 const SERVICE_TYPE_IDS = SERVICE_TYPES.map((s) => s.id) as [string, ...string[]];
 const MIN_SCHEDULE_LEAD_MINUTES = 15;
@@ -79,6 +87,13 @@ export async function POST(request: NextRequest) {
 
   const provider = await findAvailableProvider(service.category);
 
+  let distanceKm: number | null = null;
+  let travelFee = 0;
+  if (provider?.lastLat != null && provider?.lastLng != null) {
+    distanceKm = haversineDistanceKm(provider.lastLat, provider.lastLng, customerLat, customerLng);
+    travelFee = calculateTravelFee(distanceKm);
+  }
+
   const booking = await prisma.booking.create({
     data: {
       customerId: session.userId,
@@ -93,7 +108,9 @@ export async function POST(request: NextRequest) {
       hours: service.pricingMode === "hourly" ? hours : null,
       quantity: service.pricingMode === "perUnit" ? quantity : null,
       estimatedHours: quote.estimatedHours,
-      price: quote.price,
+      price: quote.price + travelFee,
+      distanceKm,
+      travelFee,
       notes,
       scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
     },

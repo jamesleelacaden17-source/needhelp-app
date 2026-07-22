@@ -12,6 +12,7 @@ import {
 } from "@/lib/config";
 import LocationMap from "@/app/components/LocationMap";
 import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
+import PriceBreakdown from "@/app/components/PriceBreakdown";
 
 const STATUS_LABEL: Record<string, string> = {
   ASSIGNED: "New job — ready to start",
@@ -77,10 +78,17 @@ export default function ProviderDashboard() {
   }, [loadAll]);
 
   const hasActiveJob = bookings.some((b) => ["ASSIGNED", "IN_PROGRESS"].includes(b.status));
+  const isOnline = !!user?.isOnline;
   const lastSentRef = useRef(0);
 
+  // Track location whenever online — not just during an active job — so
+  // new booking requests can be fairly priced against how far the provider
+  // actually is (see the travel fee). Only the customer-facing "sharing
+  // live location" indicator (and the map they see) is tied to an active
+  // job specifically; while merely online-and-idle this is used internally
+  // for matching/pricing only.
   useEffect(() => {
-    if (!hasActiveJob || typeof navigator === "undefined" || !navigator.geolocation) {
+    if ((!hasActiveJob && !isOnline) || typeof navigator === "undefined" || !navigator.geolocation) {
       setLocationSharing(false);
       return;
     }
@@ -102,7 +110,7 @@ export default function ProviderDashboard() {
         setLocationSharing(false);
         setLocationError(
           err.code === err.PERMISSION_DENIED
-            ? "Location permission denied — customers won't see your live location"
+            ? "Location permission denied — you won't be matched with fairly-priced nearby jobs"
             : "Could not read your location"
         );
       },
@@ -110,7 +118,7 @@ export default function ProviderDashboard() {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [hasActiveJob]);
+  }, [hasActiveJob, isOnline]);
 
   async function toggleOnline() {
     setToggling(true);
@@ -196,11 +204,13 @@ export default function ProviderDashboard() {
         <VerificationPanel user={user} onUpdated={loadAll} />
       )}
 
-      {hasActiveJob && (
+      {(hasActiveJob || isOnline) && (
         <p className="mt-3 text-xs text-zinc-500">
           {locationSharing
-            ? "📍 Sharing your live location with the customer"
-            : locationError ?? "Requesting location access to share with the customer…"}
+            ? hasActiveJob
+              ? "📍 Sharing your live location with the customer"
+              : "📍 Location on — you'll be fairly matched and priced for nearby jobs"
+            : locationError ?? "Requesting location access…"}
         </p>
       )}
 
@@ -229,9 +239,7 @@ export default function ProviderDashboard() {
                 {b.notes && <p className="mt-1 text-sm text-zinc-600">Notes: {b.notes}</p>}
 
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-zinc-900">
-                    {CURRENCY_SYMBOL}{b.price.toFixed(2)}
-                  </span>
+                  <PriceBreakdown price={b.price} distanceKm={b.distanceKm} travelFee={b.travelFee} />
                   <div className="flex gap-2">
                     <button
                       onClick={() => updateBooking(b.id, "decline")}
@@ -295,9 +303,7 @@ export default function ProviderDashboard() {
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-zinc-900">
-                    {CURRENCY_SYMBOL}{b.price.toFixed(2)}
-                  </span>
+                  <PriceBreakdown price={b.price} distanceKm={b.distanceKm} travelFee={b.travelFee} />
                   <div className="flex gap-2">
                     {b.status === "ASSIGNED" && (
                       <button
@@ -343,6 +349,12 @@ export default function ProviderDashboard() {
                     <span className="font-semibold text-zinc-900">
                       {CURRENCY_SYMBOL}{b.transaction.providerPayout.toFixed(2)}
                     </span>
+                    {!!b.travelFee && (
+                      <span className="text-zinc-400">
+                        {" "}
+                        (includes {CURRENCY_SYMBOL}{b.travelFee.toFixed(2)} travel fee — no platform cut)
+                      </span>
+                    )}
                   </p>
                 )}
                 {b.rating && (

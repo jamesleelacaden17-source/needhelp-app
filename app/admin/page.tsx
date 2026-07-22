@@ -22,7 +22,13 @@ type Stats = {
     payoutStatus: string;
     payoutError: string | null;
     createdAt: string;
-    booking: { serviceType: string; customer: { name: string }; provider: { name: string } | null };
+    booking: {
+      serviceType: string;
+      customer: { name: string };
+      provider: { name: string } | null;
+      distanceKm: number | null;
+      travelFee: number | null;
+    };
   }[];
   providers: {
     id: string;
@@ -34,6 +40,16 @@ type Stats = {
     providerCategory: string;
     profilePhotoPath: string | null;
     superBadge: string | null;
+  }[];
+  customers: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    createdAt: string;
+    totalBookings: number;
+    totalSpent: number;
+    lastBookingAt: string | null;
   }[];
 };
 
@@ -220,15 +236,66 @@ export default function AdminDashboard() {
         </div>
       </section>
 
+      <section className="mt-8">
+        <h2 className="font-semibold text-zinc-900">
+          Customers{" "}
+          <span className="ml-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+            {stats.customers.length}
+          </span>
+        </h2>
+        <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-zinc-50 text-zinc-500">
+              <tr>
+                <th className="px-4 py-2 font-medium">Name</th>
+                <th className="px-4 py-2 font-medium">Contact</th>
+                <th className="px-4 py-2 font-medium">Bookings</th>
+                <th className="px-4 py-2 font-medium">Total spent</th>
+                <th className="px-4 py-2 font-medium">Last booking</th>
+                <th className="px-4 py-2 font-medium">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.customers.map((c) => (
+                <tr key={c.id} className="border-t border-zinc-100">
+                  <td className="px-4 py-2 font-medium text-zinc-900">{c.name}</td>
+                  <td className="px-4 py-2 text-zinc-500">
+                    {c.email}
+                    {c.phone && <span className="block text-xs text-zinc-400">{c.phone}</span>}
+                  </td>
+                  <td className="px-4 py-2">{c.totalBookings}</td>
+                  <td className="px-4 py-2">{CURRENCY_SYMBOL}{c.totalSpent.toFixed(2)}</td>
+                  <td className="px-4 py-2 text-zinc-500">
+                    {c.lastBookingAt ? new Date(c.lastBookingAt).toLocaleDateString("en-PH") : "—"}
+                  </td>
+                  <td className="px-4 py-2 text-zinc-500">
+                    {new Date(c.createdAt).toLocaleDateString("en-PH")}
+                  </td>
+                </tr>
+              ))}
+              {stats.customers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-zinc-400">
+                    No customers yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="mt-8 mb-16">
         <h2 className="font-semibold text-zinc-900">Recent transactions</h2>
         <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 text-zinc-500">
               <tr>
+                <th className="px-4 py-2 font-medium">Date</th>
                 <th className="px-4 py-2 font-medium">Job</th>
                 <th className="px-4 py-2 font-medium">Customer</th>
                 <th className="px-4 py-2 font-medium">Provider</th>
+                <th className="px-4 py-2 font-medium">Distance</th>
                 <th className="px-4 py-2 font-medium">Amount</th>
                 <th className="px-4 py-2 font-medium">Commission</th>
                 <th className="px-4 py-2 font-medium">Payout to you</th>
@@ -237,9 +304,27 @@ export default function AdminDashboard() {
             <tbody>
               {stats.transactions.map((t) => (
                 <tr key={t.id} className="border-t border-zinc-100">
+                  <td className="px-4 py-2 text-zinc-500">
+                    {new Date(t.createdAt).toLocaleDateString("en-PH")}
+                  </td>
                   <td className="px-4 py-2">{t.booking.serviceType}</td>
                   <td className="px-4 py-2">{t.booking.customer.name}</td>
                   <td className="px-4 py-2">{t.booking.provider?.name ?? "—"}</td>
+                  <td className="px-4 py-2 text-zinc-500">
+                    {t.booking.distanceKm != null ? (
+                      <>
+                        {t.booking.distanceKm.toFixed(1)}km
+                        {!!t.booking.travelFee && (
+                          <span className="text-xs text-zinc-400">
+                            {" "}
+                            (+{CURRENCY_SYMBOL}{t.booking.travelFee.toFixed(2)})
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className="px-4 py-2">{CURRENCY_SYMBOL}{t.amount.toFixed(2)}</td>
                   <td className="px-4 py-2 font-medium text-brand-700">
                     {CURRENCY_SYMBOL}{t.commissionAmount.toFixed(2)}
@@ -251,7 +336,7 @@ export default function AdminDashboard() {
               ))}
               {stats.transactions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-zinc-400">
+                  <td colSpan={8} className="px-4 py-6 text-center text-zinc-400">
                     No completed jobs yet
                   </td>
                 </tr>

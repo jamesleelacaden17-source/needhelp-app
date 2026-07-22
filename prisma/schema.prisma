@@ -118,6 +118,12 @@ model Booking {
   price          Float
   notes          String?
 
+  // Distance between the matched provider and the customer at the time of
+  // matching, and the resulting travel fee already folded into `price`.
+  // Null when the provider's location wasn't known (no fee applied).
+  distanceKm  Float?
+  travelFee   Float?
+
   // Customer's requested arrival time — null means "as soon as possible"
   scheduledFor         DateTime?
   // Comma-separated provider IDs who declined this request, so re-matching

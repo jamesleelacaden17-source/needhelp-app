@@ -2,6 +2,23 @@ export const PLATFORM_COMMISSION_RATE = 0.2; // 20% platform commission per comp
 
 export const CURRENCY_SYMBOL = "₱";
 
+// Distance-based travel fee — compensates the provider fairly when a job is
+// far from them. The first FREE_TRAVEL_RADIUS_KM is on the house (typical
+// "local" range); beyond that it's TRAVEL_FEE_PER_KM per km, capped so an
+// unusually long match never produces a runaway fee. The platform does not
+// take commission on this portion — see PLATFORM_COMMISSION_RATE usage at
+// job completion — so a distant job is fairly compensated for the provider
+// without the customer overpaying platform commission on travel time.
+export const FREE_TRAVEL_RADIUS_KM = 3;
+export const TRAVEL_FEE_PER_KM = 15;
+export const MAX_TRAVEL_FEE = 500;
+
+export function calculateTravelFee(distanceKm: number): number {
+  if (distanceKm <= FREE_TRAVEL_RADIUS_KM) return 0;
+  const fee = Math.round((distanceKm - FREE_TRAVEL_RADIUS_KM) * TRAVEL_FEE_PER_KM);
+  return Math.min(fee, MAX_TRAVEL_FEE);
+}
+
 // Fallback map view before we know the customer's location — centered on
 // the Philippines as a whole (not any single city) so the app looks and
 // behaves the same whether the customer is in Vigan, Manila, Cebu, or

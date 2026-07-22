@@ -15,11 +15,14 @@ import {
   PH_MAP_CENTER,
   PH_MAP_ZOOM,
   LOCAL_MAP_ZOOM,
+  FREE_TRAVEL_RADIUS_KM,
+  TRAVEL_FEE_PER_KM,
   MIN_HOURS,
   MAX_HOURS,
   type ProviderCategoryId,
 } from "@/lib/config";
 import LocationMap from "@/app/components/LocationMap";
+import PriceBreakdown from "@/app/components/PriceBreakdown";
 import { VerifiedBadge, SuperBadge, ProviderAvatar } from "@/app/components/Badges";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -380,14 +383,21 @@ export default function CustomerDashboard() {
             />
           </label>
 
-          <div className="flex items-center justify-between rounded-lg bg-zinc-50 px-4 py-3 text-sm">
-            <span className="text-zinc-600">
-              {selectedService.pricingMode === "tieredFlat" || selectedService.pricingMode === "flat"
-                ? "Flat rate"
-                : "Estimated price"}{" "}
-              · ~{estimatedHours}h
-            </span>
-            <span className="font-semibold text-zinc-900">{CURRENCY_SYMBOL}{estimate.toFixed(2)}</span>
+          <div className="rounded-lg bg-zinc-50 px-4 py-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-zinc-600">
+                {selectedService.pricingMode === "tieredFlat" || selectedService.pricingMode === "flat"
+                  ? "Flat rate"
+                  : "Estimated price"}{" "}
+                · ~{estimatedHours}h
+              </span>
+              <span className="font-semibold text-zinc-900">{CURRENCY_SYMBOL}{estimate.toFixed(2)}</span>
+            </div>
+            <p className="mt-1 text-xs text-zinc-400">
+              Final price may include a small travel fee based on your provider&apos;s distance
+              (first {FREE_TRAVEL_RADIUS_KM}km free, then {CURRENCY_SYMBOL}
+              {TRAVEL_FEE_PER_KM}/km) — shown once you&apos;re matched.
+            </p>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -499,7 +509,7 @@ function ActiveBookingCard({
       )}
 
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-zinc-900">{CURRENCY_SYMBOL}{b.price.toFixed(2)}</span>
+        <PriceBreakdown price={b.price} distanceKm={b.distanceKm} travelFee={b.travelFee} />
         {["PENDING", "ASSIGNED", "NO_PROVIDERS_AVAILABLE"].includes(b.status) && (
           <button
             onClick={() => onCancel(b.id)}
@@ -552,7 +562,9 @@ function PastBookingCard({ booking, onRated }: { booking: Booking; onRated: () =
           {booking.provider.superBadge && <SuperBadge label={booking.provider.superBadge} />}
         </div>
       )}
-      <p className="mt-1 text-sm font-semibold text-zinc-900">{CURRENCY_SYMBOL}{booking.price.toFixed(2)}</p>
+      <p className="mt-1">
+        <PriceBreakdown price={booking.price} distanceKm={booking.distanceKm} travelFee={booking.travelFee} />
+      </p>
 
       {booking.status === "COMPLETED" && <PaymentSection booking={booking} />}
 

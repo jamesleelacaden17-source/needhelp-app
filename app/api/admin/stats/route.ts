@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [transactions, bookingCounts, providers] = await Promise.all([
+  const [transactions, bookingCounts, providers, customers] = await Promise.all([
     prisma.transaction.findMany({
       include: {
         booking: {
@@ -39,6 +39,20 @@ export async function GET() {
         profilePhotoPath: true,
       },
     }),
+    prisma.user.findMany({
+      where: { role: "CUSTOMER" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+        bookingsAsCustomer: {
+          select: { price: true, status: true, createdAt: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const totalRevenue = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -62,6 +76,20 @@ export async function GET() {
         ...p,
         avgRating,
         superBadge: getSuperBadge(p.gender as Gender | null, avgRating, p.ratingCount),
+      };
+    }),
+    customers: customers.map((c) => {
+      const { bookingsAsCustomer, ...rest } = c;
+      const completedBookings = bookingsAsCustomer.filter((b) => b.status === "COMPLETED");
+      const lastBookingAt = bookingsAsCustomer.reduce<Date | null>(
+        (latest, b) => (!latest || b.createdAt > latest ? b.createdAt : latest),
+        null
+      );
+      return {
+        ...rest,
+        totalBookings: bookingsAsCustomer.length,
+        totalSpent: completedBookings.reduce((sum, b) => sum + b.price, 0),
+        lastBookingAt,
       };
     }),
   });
