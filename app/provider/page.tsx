@@ -142,7 +142,7 @@ export default function ProviderDashboard() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           {user && (
             <ProviderAvatar
@@ -153,7 +153,7 @@ export default function ProviderDashboard() {
             />
           )}
           <div>
-            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-zinc-900">
+            <h1 className="flex flex-wrap items-center gap-2 text-xl font-bold text-zinc-900 sm:text-2xl">
               Hi {user?.name?.split(" ")[0]} 👋
               {isVerified && <VerifiedBadge />}
               {user?.superBadge && <SuperBadge label={user.superBadge} />}
@@ -167,7 +167,7 @@ export default function ProviderDashboard() {
             </p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="sm:text-right">
           <button
             onClick={toggleOnline}
             disabled={toggling || !isVerified}
@@ -207,9 +207,9 @@ export default function ProviderDashboard() {
           <div className="mt-3 flex flex-col gap-3">
             {activeJobs.map((b) => (
               <div key={b.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-zinc-900">{b.serviceType}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[b.status]}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[b.status]}`}>
                     {STATUS_LABEL[b.status]}
                   </span>
                 </div>
@@ -272,9 +272,9 @@ export default function ProviderDashboard() {
           <div className="mt-3 flex flex-col gap-3">
             {pastJobs.map((b) => (
               <div key={b.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-zinc-900">{b.serviceType}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[b.status]}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[b.status]}`}>
                     {STATUS_LABEL[b.status]}
                   </span>
                 </div>

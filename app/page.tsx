@@ -9,8 +9,16 @@ const CATEGORY_ICON: Record<string, string> = {
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center bg-gradient-to-b from-brand-50 to-zinc-50 px-6">
-      <div className="mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center gap-8 py-24 text-center">
+    <main className="relative flex flex-1 flex-col items-center overflow-hidden bg-gradient-to-b from-brand-50 to-zinc-50 px-6">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl sm:h-96 sm:w-96"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-40 -left-32 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl sm:h-96 sm:w-96"
+      />
+      <div className="relative mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center gap-8 py-20 text-center sm:py-24">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-brand-700 shadow-sm ring-1 ring-brand-100">
           <span aria-hidden="true">🛡️</span> ID &amp; photo-verified providers only
         </span>
@@ -25,13 +33,13 @@ export default function Home() {
         <div className="flex flex-col gap-4 sm:flex-row">
           <Link
             href="/signup?role=CUSTOMER"
-            className="rounded-full bg-brand-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-700"
+            className="rounded-full bg-brand-600 px-8 py-3 text-base font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-md"
           >
             Get help now
           </Link>
           <Link
             href="/signup?role=PROVIDER"
-            className="rounded-full border border-brand-600 px-8 py-3 text-base font-semibold text-brand-700 hover:bg-brand-50"
+            className="rounded-full border border-brand-600 px-8 py-3 text-base font-semibold text-brand-700 transition-all hover:-translate-y-0.5 hover:bg-brand-50 hover:shadow-md"
           >
             Become a provider
           </Link>
@@ -41,7 +49,7 @@ export default function Home() {
           {PROVIDER_CATEGORIES.map((c) => (
             <div
               key={c.id}
-              className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+              className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
             >
               <span className="text-3xl">{CATEGORY_ICON[c.id]}</span>
               <span className="text-sm font-medium text-zinc-900">{c.label}</span>
@@ -73,7 +81,7 @@ export default function Home() {
 
 function Feature({ icon, title, body }: { icon: string; title: string; body: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
       <span className="text-2xl">{icon}</span>
       <h3 className="mt-2 font-semibold text-zinc-900">{title}</h3>
       <p className="mt-1 text-sm text-zinc-600">{body}</p>

@@ -66,11 +66,14 @@ export const PROVIDER_CATEGORIES: { id: ProviderCategoryId; label: string; provi
   { id: "LAUNDRY", label: "Laundry Service", providerLabel: "Laundry Provider" },
 ];
 
+// Flat rates benchmarked against 2026 Metro Manila market pricing for
+// standard home cleaning (typically ₱1,000–2,500 per session, scaling with
+// unit size).
 export const PROPERTY_TYPES = [
-  { id: "studio", label: "Studio", price: 500, estimatedHours: 1.5 },
-  { id: "1br", label: "1 Bedroom", price: 750, estimatedHours: 2 },
-  { id: "2br", label: "2 Bedroom", price: 1000, estimatedHours: 3 },
-  { id: "house", label: "House", price: 1500, estimatedHours: 4.5 },
+  { id: "studio", label: "Studio", price: 550, estimatedHours: 1.5 },
+  { id: "1br", label: "1 Bedroom", price: 850, estimatedHours: 2 },
+  { id: "2br", label: "2 Bedroom", price: 1300, estimatedHours: 3 },
+  { id: "house", label: "House", price: 1900, estimatedHours: 4.5 },
 ] as const;
 
 type TieredFlatService = {
@@ -118,38 +121,40 @@ export type ServiceTypeDef = TieredFlatService | FlatService | PerUnitService | 
 export const SERVICE_TYPES: ServiceTypeDef[] = [
   // Home Cleaning
   { id: "standard", category: "CLEANING", label: "Standard Cleaning", pricingMode: "tieredFlat" },
-  { id: "deep", category: "CLEANING", label: "Deep Cleaning", pricingMode: "hourly", ratePerHour: 180 },
-  { id: "move", category: "CLEANING", label: "Move In/Out Cleaning", pricingMode: "hourly", ratePerHour: 200 },
+  { id: "deep", category: "CLEANING", label: "Deep Cleaning", pricingMode: "hourly", ratePerHour: 350 },
+  { id: "move", category: "CLEANING", label: "Move In/Out Cleaning", pricingMode: "hourly", ratePerHour: 400 },
   {
     id: "post_construction",
     category: "CLEANING",
     label: "Post-Construction Cleaning",
     pricingMode: "hourly",
-    ratePerHour: 250,
+    ratePerHour: 480,
   },
 
-  // Aircon Cleaning — priced per unit serviced
+  // Aircon Cleaning — priced per unit serviced. Market rates for routine
+  // window/split-type cleaning run roughly ₱500–800/unit.
   {
     id: "aircon_cleaning",
     category: "AIRCON",
     label: "Aircon Cleaning (per unit)",
     pricingMode: "perUnit",
     unitLabel: "aircon unit",
-    pricePerUnit: 400,
+    pricePerUnit: 650,
     minUnits: 1,
     maxUnits: 10,
     hoursPerUnit: 0.75,
     baseHours: 0.25,
   },
 
-  // Laundry — priced per kilo, or per piece for dry cleaning
+  // Laundry — priced per kilo, or per piece for dry cleaning. Wash-dry-fold
+  // market rate is ₱45–80/kilo; dry cleaning runs ₱250+/piece for shirts.
   {
     id: "wash_dry_fold",
     category: "LAUNDRY",
     label: "Wash, Dry & Fold (per kilo)",
     pricingMode: "perUnit",
     unitLabel: "kilo",
-    pricePerUnit: 60,
+    pricePerUnit: 65,
     minUnits: 3,
     maxUnits: 50,
     hoursPerUnit: 0.1,
@@ -161,7 +166,7 @@ export const SERVICE_TYPES: ServiceTypeDef[] = [
     label: "Dry Cleaning (per piece)",
     pricingMode: "perUnit",
     unitLabel: "piece",
-    pricePerUnit: 150,
+    pricePerUnit: 280,
     minUnits: 1,
     maxUnits: 30,
     hoursPerUnit: 0.15,

@@ -342,14 +342,16 @@ function VerificationCard({
         </div>
       </div>
       <div className="flex-1">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-medium text-zinc-900">
             {provider.name}{" "}
             <span className="font-normal text-zinc-400">
               · {CATEGORY_LABEL[provider.providerCategory] ?? provider.providerCategory}
             </span>
           </span>
-          <VerificationBadge status={provider.verificationStatus} />
+          <span className="shrink-0">
+            <VerificationBadge status={provider.verificationStatus} />
+          </span>
         </div>
         <p className="mt-1 text-sm text-zinc-500">{provider.email}</p>
         {provider.phone && <p className="text-sm text-zinc-500">{provider.phone}</p>}

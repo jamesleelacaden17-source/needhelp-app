@@ -352,9 +352,9 @@ function ActiveBookingCard({
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium text-zinc-900">{b.serviceType}</span>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[b.status]}`}>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[b.status]}`}>
           {STATUS_LABEL[b.status]}
         </span>
       </div>
@@ -441,9 +441,9 @@ function PastBookingCard({ booking, onRated }: { booking: Booking; onRated: () =
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium text-zinc-900">{booking.serviceType}</span>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[booking.status]}`}>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[booking.status]}`}>
           {STATUS_LABEL[booking.status]}
         </span>
       </div>
