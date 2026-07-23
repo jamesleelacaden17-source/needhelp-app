@@ -108,10 +108,10 @@ async function main() {
     password: "provider123",
     role: "PROVIDER",
     providerCategory: "CLEANING",
-    gender: "FEMALE",
+    gender: "MALE",
     isOnline: true,
     ratingSum: 40,
-    ratingCount: 8, // 5.0 avg over 8 jobs — qualifies for "Superwoman"
+    ratingCount: 8, // 5.0 avg over 8 jobs — qualifies for "Superman"
     verificationStatus: "APPROVED",
     withIdPhoto: true,
     withProfilePhoto: true,
@@ -160,8 +160,8 @@ async function main() {
     providerCategory: "LAUNDRY",
     gender: "FEMALE",
     isOnline: true,
-    ratingSum: 46,
-    ratingCount: 10, // 4.6 avg — verified, but below the Superman/Superwoman bar
+    ratingSum: 49,
+    ratingCount: 10, // 4.9 avg over 10 jobs — qualifies for "Superwoman"
     verificationStatus: "APPROVED",
     withIdPhoto: true,
     withProfilePhoto: true,
@@ -177,11 +177,11 @@ async function main() {
   console.log("Seed complete. Sample accounts (password shown per account):");
   console.log("  admin@needhelp.test / admin123");
   console.log("  alex.cleaning@needhelp.test / provider123 (cleaning, verified, online)");
-  console.log("  jordan.cleaning@needhelp.test / provider123 (cleaning, verified, online, Superwoman)");
+  console.log("  jordan.cleaning@needhelp.test / provider123 (cleaning, verified, online, Superman)");
   console.log("  sam.cleaning@needhelp.test / provider123 (cleaning, ID pending, no profile photo)");
   console.log("  maria.cleaning@needhelp.test / provider123 (cleaning, no ID submitted)");
   console.log("  ramon.aircon@needhelp.test / provider123 (aircon, verified, online, Superman)");
-  console.log("  liza.laundry@needhelp.test / provider123 (laundry, verified, online)");
+  console.log("  liza.laundry@needhelp.test / provider123 (laundry, verified, online, Superwoman)");
   console.log("  customer@needhelp.test / customer123");
 }
 
